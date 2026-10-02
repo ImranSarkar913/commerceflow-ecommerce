@@ -1,0 +1,30 @@
+generator client {
+ provider = "prisma-client-js"
+}
+datasource db {
+ provider = "postgresql"
+}
+model Product {
+ id String @id @default(uuid()) @db.Uuid
+ sku String @unique @db.VarChar(40)
+ name String @db.VarChar(120)
+ description String
+ category String @db.VarChar(50)
+ price Int
+ onHand Int @map("on_hand")
+ reserved Int @default(0)
+ active Boolean @default(true)
+ version Int @default(1)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ @@map("products")
+}
+model Coupon {
+ code String @id @db.VarChar(24)
+ percent Int
+ minimum Int @default(0)
+ maxUses Int @map("max_uses")
+ used Int @default(0)
+ active Boolean @default(true)
+ expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+ @@map("coupons")
+}

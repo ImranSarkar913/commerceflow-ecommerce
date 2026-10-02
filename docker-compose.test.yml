@@ -1,0 +1,48 @@
+name: commerceflow-tests
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      {
+        POSTGRES_USER: commerceflow,
+        POSTGRES_PASSWORD: test-only-password,
+        POSTGRES_DB: commerceflow_test,
+      }
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U commerceflow -d commerceflow_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  tests:
+    image: node:24-alpine
+    working_dir: /app
+    volumes: ["./backend:/app", "test-node-modules:/app/node_modules"]
+    environment:
+      NODE_ENV: test
+      PGHOST: postgres
+      PGDATABASE: commerceflow_test
+      PGUSER: commerceflow
+      PGPASSWORD: test-only-password
+      REDIS_URL: redis://redis:6379
+      APP_ORIGIN: http://localhost:3002
+      WEBHOOK_SECRET: test-only-signing-secret-at-least-32-characters
+      ENABLE_SANDBOX: "true"
+      COOKIE_SECURE: "false"
+    command:
+      [
+        "sh",
+        "-c",
+        "npm ci --ignore-scripts --no-audit --no-fund && npm run generate && npm test && npm run test:integration",
+      ]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+volumes:
+  test-node-modules:
